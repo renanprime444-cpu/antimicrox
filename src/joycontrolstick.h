@@ -47,7 +47,8 @@ class JoyControlStick : public QObject, public JoyStickDirectionsType
         StandardMode = 0,
         EightWayMode,
         FourWayCardinal,
-        FourWayDiagonal
+        FourWayDiagonal,
+        SixteenWayMode
     };
 
     void joyEvent(bool ignoresets = false); // JoyControlStickEvent class
@@ -199,6 +200,9 @@ class JoyControlStick : public QObject, public JoyStickDirectionsType
     void determineFourWayCardinalEvent(JoyControlStickButton *&eventbutton1,
                                        JoyControlStickButton *&eventbutton2); // JoyControlStickEvent class
     void determineFourWayDiagonalEvent(JoyControlStickButton *&eventbutton3); // JoyControlStickEvent class
+    void determineSixteenWayModeEvent(JoyControlStickButton *&eventbutton1, JoyControlStickButton *&eventbutton2,
+                                      JoyControlStickButton *&eventbutton3); // 16 direcoes
+    JoyControlStick::JoyStickDirections determineSixteenWayModeDirection(int axisXValue, int axisYValue); // 16 direcoes
 
     JoyControlStick::JoyStickDirections determineStandardModeDirection(); // JoyControlStickAxes class
     JoyControlStick::JoyStickDirections determineStandardModeDirection(int axisXValue,

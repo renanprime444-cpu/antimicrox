@@ -64,6 +64,60 @@ void StickPushButtonGroup::generateButtons()
     downLeftButton = generateBtnToGrid(pushbutton, stick, JoyControlStick::StickLeftDown, 2, 0);
     downButton = generateBtnToGrid(pushbutton, stick, JoyControlStick::StickDown, 2, 1);
     downRightButton = generateBtnToGrid(pushbutton, stick, JoyControlStick::StickRightDown, 2, 2);
+
+    // botoes extras do modo de 16 direcoes (a posicao real e definida em placeWidgets)
+    extraButtons.clear();
+    for (int dir = static_cast<int>(JoyControlStick::StickNNE); dir <= static_cast<int>(JoyControlStick::StickNNW); ++dir)
+    {
+        extraButtons.append(
+            generateBtnToGrid(pushbutton, stick, static_cast<JoyStickDirectionsType::JoyStickDirections>(dir), 3, 3));
+    }
+}
+
+void StickPushButtonGroup::placeWidgets(bool sixteenWay)
+{
+    auto place = [this](QWidget *widget, int row, int col)
+    {
+        removeWidget(widget);
+        addWidget(widget, row, col);
+    };
+
+    if (sixteenWay)
+    {
+        // Grade 5x5: as 16 casas da borda sao as 16 direcoes (sentido horario a partir de cima)
+        place(upButton, 0, 2);
+        place(extraButtons.at(0), 0, 3); // NNE
+        place(upRightButton, 0, 4);
+        place(extraButtons.at(1), 1, 4); // ENE
+        place(rightButton, 2, 4);
+        place(extraButtons.at(2), 3, 4); // ESE
+        place(downRightButton, 4, 4);
+        place(extraButtons.at(3), 4, 3); // SSE
+        place(downButton, 4, 2);
+        place(extraButtons.at(4), 4, 1); // SSW
+        place(downLeftButton, 4, 0);
+        place(extraButtons.at(5), 3, 0); // WSW
+        place(leftButton, 2, 0);
+        place(extraButtons.at(6), 1, 0); // WNW
+        place(upLeftButton, 0, 0);
+        place(extraButtons.at(7), 0, 1); // NNW
+        place(stickWidget, 2, 2);
+    } else
+    {
+        // fora do modo de 16 direcoes, os botoes extras saem da grade
+        for (JoyControlStickButtonPushButton *extra : extraButtons)
+            removeWidget(extra);
+
+        place(upLeftButton, 0, 0);
+        place(upButton, 0, 1);
+        place(upRightButton, 0, 2);
+        place(leftButton, 1, 0);
+        place(stickWidget, 1, 1);
+        place(rightButton, 1, 2);
+        place(downLeftButton, 2, 0);
+        place(downButton, 2, 1);
+        place(downRightButton, 2, 2);
+    }
 }
 
 JoyControlStickButtonPushButton *
@@ -85,8 +139,15 @@ StickPushButtonGroup::generateBtnToGrid(JoyControlStickButtonPushButton *pushbut
 
 void StickPushButtonGroup::changeButtonLayout()
 {
+    const bool sixteenWay = (stick->getJoyMode() == JoyControlStick::SixteenWayMode);
+
+    placeWidgets(sixteenWay);
+
+    for (JoyControlStickButtonPushButton *extra : extraButtons)
+        extra->setVisible(sixteenWay);
+
     if ((stick->getJoyMode() == JoyControlStick::StandardMode) || (stick->getJoyMode() == JoyControlStick::EightWayMode) ||
-        (stick->getJoyMode() == JoyControlStick::FourWayCardinal))
+        (stick->getJoyMode() == JoyControlStick::FourWayCardinal) || sixteenWay)
     {
         upButton->setVisible(true);
         downButton->setVisible(true);
@@ -100,7 +161,8 @@ void StickPushButtonGroup::changeButtonLayout()
         rightButton->setVisible(false);
     }
 
-    if ((stick->getJoyMode() == JoyControlStick::EightWayMode) || (stick->getJoyMode() == JoyControlStick::FourWayDiagonal))
+    if ((stick->getJoyMode() == JoyControlStick::EightWayMode) || (stick->getJoyMode() == JoyControlStick::FourWayDiagonal) ||
+        sixteenWay)
     {
         upLeftButton->setVisible(true);
         upRightButton->setVisible(true);
@@ -145,6 +207,9 @@ void StickPushButtonGroup::toggleNameDisplay()
     upRightButton->toggleNameDisplay();
     downLeftButton->toggleNameDisplay();
     downRightButton->toggleNameDisplay();
+
+    for (JoyControlStickButtonPushButton *extra : extraButtons)
+        extra->toggleNameDisplay();
 
     stickWidget->toggleNameDisplay();
 }

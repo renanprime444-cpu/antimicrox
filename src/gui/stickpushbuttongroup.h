@@ -22,6 +22,7 @@
 #include "joycontrolstickdirectionstype.h"
 
 #include <QGridLayout>
+#include <QList>
 
 class JoyControlStick;
 class QWidget;
@@ -53,6 +54,7 @@ class StickPushButtonGroup : public QGridLayout
 
   protected:
     void generateButtons();
+    void placeWidgets(bool sixteenWay);
 
   signals:
     void buttonSlotChanged();
@@ -82,6 +84,9 @@ class StickPushButtonGroup : public QGridLayout
     JoyControlStickButtonPushButton *downRightButton;
 
     JoyControlStickPushButton *stickWidget;
+
+    // 8 botoes extras do modo de 16 direcoes (ordem: NNE, ENE, ESE, SSE, SSW, WSW, WNW, NNW)
+    QList<JoyControlStickButtonPushButton *> extraButtons;
 
     JoyControlStickButtonPushButton *generateBtnToGrid(JoyControlStickButtonPushButton *pushbutton, JoyControlStick *stick,
                                                        JoyStickDirectionsType::JoyStickDirections stickValue, int gridRow,

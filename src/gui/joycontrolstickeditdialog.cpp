@@ -42,6 +42,7 @@ JoyControlStickEditDialog::JoyControlStickEditDialog(JoyControlStick *stick, boo
     , helper(stick)
 {
     ui->setupUi(this);
+    ui->joyModeComboBox->addItem(tr("Sixteen Way")); // modo de 16 direcoes (indice 4)
     this->keypadUnlocked = keypadUnlocked;
     setAttribute(Qt::WA_DeleteOnClose);
 
@@ -103,6 +104,12 @@ JoyControlStickEditDialog::JoyControlStickEditDialog(JoyControlStick *stick, boo
     }
     case JoyControlStick::FourWayDiagonal: {
         ui->joyModeComboBox->setCurrentIndex(3);
+        ui->diagonalRangeSlider->setEnabled(false);
+        ui->diagonalRangeSpinBox->setEnabled(false);
+        break;
+    }
+    case JoyControlStick::SixteenWayMode: {
+        ui->joyModeComboBox->setCurrentIndex(4);
         ui->diagonalRangeSlider->setEnabled(false);
         ui->diagonalRangeSpinBox->setEnabled(false);
         break;
@@ -457,6 +464,13 @@ void JoyControlStickEditDialog::implementModes(int index)
     }
     case 3: {
         stick->setJoyMode(JoyControlStick::FourWayDiagonal);
+        ui->diagonalRangeSlider->setEnabled(false);
+        ui->diagonalRangeSpinBox->setEnabled(false);
+
+        break;
+    }
+    case 4: {
+        stick->setJoyMode(JoyControlStick::SixteenWayMode);
         ui->diagonalRangeSlider->setEnabled(false);
         ui->diagonalRangeSpinBox->setEnabled(false);
 

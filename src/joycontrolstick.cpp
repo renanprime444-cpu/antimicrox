@@ -182,6 +182,14 @@ void JoyControlStick::populateStickBtns()
     button = new JoyControlStickButton(this, StickRightUp, originset, getParentSet(), this);
     buttons.insert(StickRightUp, button);
 
+    // 8 botoes extras para o modo de 16 direcoes
+    for (int dir = static_cast<int>(StickNNE); dir <= static_cast<int>(StickNNW); ++dir)
+    {
+        JoyStickDirections extraDir = static_cast<JoyStickDirections>(dir);
+        button = new JoyControlStickButton(this, extraDir, originset, getParentSet(), this);
+        buttons.insert(extraDir, button);
+    }
+
     modifierButton = new JoyControlStickModifierButton(this, originset, getParentSet(), this);
 }
 
@@ -228,6 +236,10 @@ void JoyControlStick::createDeskEvent(bool ignoresets)
 
         case FourWayDiagonal:
             determineFourWayDiagonalEvent(eventbutton3);
+            break;
+
+        case SixteenWayMode:
+            determineSixteenWayModeEvent(eventbutton1, eventbutton2, eventbutton3);
             break;
         }
     } else
@@ -1033,6 +1045,9 @@ void JoyControlStick::readConfig(QXmlStreamReader *xml)
                 } else if (temptext == "diagonal")
                 {
                     this->setJoyMode(FourWayDiagonal);
+                } else if (temptext == "sixteen-way")
+                {
+                    this->setJoyMode(SixteenWayMode);
                 }
             } else if ((xml->name().toString() == "squareStick") && xml->isStartElement())
             {
@@ -1117,6 +1132,10 @@ void JoyControlStick::writeConfig(QXmlStreamWriter *xml)
             xml->writeTextElement("mode", "diagonal");
             break;
 
+        case SixteenWayMode:
+            xml->writeTextElement("mode", "sixteen-way");
+            break;
+
         default:
 
             break;
@@ -1192,6 +1211,9 @@ JoyControlStickButton *JoyControlStick::getDirectionButton(JoyStickDirections di
 double JoyControlStick::calculateMouseDirectionalDistance(JoyControlStickButton *button)
 {
     double finalDistance = 0.0;
+
+    if (currentDirection >= StickNNE)
+        return getDistanceFromDeadZone();
 
     switch (currentDirection)
     {
@@ -1283,6 +1305,9 @@ double JoyControlStick::calculateLastMouseDirectionalDistance(JoyControlStickBut
 
     JoyStickDirections direction =
         calculateStickDirection(axisX->getLastKnownThrottleValue(), axisY->getLastKnownThrottleValue());
+
+    if (direction >= StickNNE)
+        return getDistanceFromDeadZone(axisX->getLastKnownThrottleValue(), axisY->getLastKnownThrottleValue());
 
     if ((direction == StickUp) && (button->getJoyNumber() == static_cast<int>(StickUp)))
     {
@@ -1468,6 +1493,9 @@ double JoyControlStick::calculateLastDirectionalDistance()
     JoyStickDirections direction =
         calculateStickDirection(axisX->getLastKnownThrottleValue(), axisY->getLastKnownThrottleValue());
 
+    if (direction >= StickNNE)
+        return getDistanceFromDeadZone(axisX->getLastKnownThrottleValue(), axisY->getLastKnownThrottleValue());
+
     switch (direction)
     {
     case StickUp: {
@@ -1553,6 +1581,9 @@ double JoyControlStick::calculateLastAccelerationDirectionalDistance()
 {
     double finalDistance = 0.0;
 
+    if (currentDirection >= StickNNE)
+        return getDistanceFromDeadZone(axisX->getLastKnownRawValue(), axisY->getLastKnownRawValue());
+
     switch (currentDirection)
     {
     case StickUp: {
@@ -1619,6 +1650,9 @@ double JoyControlStick::calculateLastAccelerationDirectionalDistance()
 double JoyControlStick::calculateDirectionalDistance()
 {
     double finalDistance = 0.0;
+
+    if (currentDirection >= StickNNE)
+        return getDistanceFromDeadZone();
 
     switch (currentDirection)
     {
@@ -2166,6 +2200,11 @@ QHash<JoyControlStick::JoyStickDirections, JoyControlStickButton *> JoyControlSt
         temphash.insert(StickRight, buttons.value(StickRight));
     }
 
+    if (currentMode == SixteenWayMode)
+    {
+        temphash = buttons;
+    }
+
     if ((currentMode == EightWayMode) || (currentMode == FourWayDiagonal))
     {
         temphash.insert(StickLeftUp, buttons.value(StickLeftUp));
@@ -2585,6 +2624,75 @@ JoyControlStick::JoyStickDirections JoyControlStick::determineFourWayDiagonalDir
 }
 
 /**
+ * @brief Converte o angulo (bearing) do analogico em uma das 16 direcoes.
+ *     Cada direcao ocupa 22,5 graus, centrada nos pontos da bussola.
+ */
+static JoyStickDirectionsType::JoyStickDirections sixteenWayDirectionFromBearing(double bearing)
+{
+    static const JoyStickDirectionsType::JoyStickDirections table[16] = {
+        JoyStickDirectionsType::StickUp,        // 0   N
+        JoyStickDirectionsType::StickNNE,       // 22,5
+        JoyStickDirectionsType::StickRightUp,   // 45  NE
+        JoyStickDirectionsType::StickENE,       // 67,5
+        JoyStickDirectionsType::StickRight,     // 90  E
+        JoyStickDirectionsType::StickESE,       // 112,5
+        JoyStickDirectionsType::StickRightDown, // 135 SE
+        JoyStickDirectionsType::StickSSE,       // 157,5
+        JoyStickDirectionsType::StickDown,      // 180 S
+        JoyStickDirectionsType::StickSSW,       // 202,5
+        JoyStickDirectionsType::StickLeftDown,  // 225 SW
+        JoyStickDirectionsType::StickWSW,       // 247,5
+        JoyStickDirectionsType::StickLeft,      // 270 W
+        JoyStickDirectionsType::StickWNW,       // 292,5
+        JoyStickDirectionsType::StickLeftUp,    // 315 NW
+        JoyStickDirectionsType::StickNNW        // 337,5
+    };
+
+    int sector = static_cast<int>((bearing + 11.25) / 22.5) % 16;
+
+    if (sector < 0)
+        sector += 16;
+
+    return table[sector];
+}
+
+/**
+ * @brief Find the current stick direction for a Sixteen Way mode stick.
+ */
+JoyControlStick::JoyStickDirections JoyControlStick::determineSixteenWayModeDirection(int axisXValue, int axisYValue)
+{
+    return sixteenWayDirectionFromBearing(calculateBearing(axisXValue, axisYValue));
+}
+
+/**
+ * @brief Determine which stick direction button should be active for a
+ *     Sixteen Way mode stick. Cada direcao tem seu proprio botao.
+ */
+void JoyControlStick::determineSixteenWayModeEvent(JoyControlStickButton *&eventbutton1, JoyControlStickButton *&eventbutton2,
+                                                   JoyControlStickButton *&eventbutton3)
+{
+    JoyStickDirections direction = sixteenWayDirectionFromBearing(calculateBearing());
+    currentDirection = direction;
+
+    switch (direction)
+    {
+    case StickUp:
+    case StickDown:
+        eventbutton2 = buttons.value(direction);
+        break;
+
+    case StickLeft:
+    case StickRight:
+        eventbutton1 = buttons.value(direction);
+        break;
+
+    default:
+        eventbutton3 = buttons.value(direction);
+        break;
+    }
+}
+
+/**
  * @brief Calculate the current direction of the stick based on the values
  *     of the X and Y axes and the current mode of the stick.
  * @return Current direction the stick is positioned.
@@ -2614,6 +2722,10 @@ JoyControlStick::JoyStickDirections JoyControlStick::calculateStickDirection(int
     }
     case FourWayDiagonal: {
         result = determineFourWayDiagonalDirection(axisXValue, axisYValue);
+        break;
+    }
+    case SixteenWayMode: {
+        result = determineSixteenWayModeDirection(axisXValue, axisYValue);
         break;
     }
     }
@@ -3374,6 +3486,9 @@ double JoyControlStick::calculateLastAccelerationButtonDistance(JoyControlStickB
 {
     double finalDistance = 0.0;
 
+    if (currentDirection >= StickNNE)
+        return getDistanceFromDeadZone(axisX->getLastKnownRawValue(), axisY->getLastKnownRawValue());
+
     switch (currentDirection)
     {
     case StickUp: {
@@ -3943,6 +4058,14 @@ JoyControlStick::getButtonsForDirection(JoyControlStick::JoyStickDirections dire
     case FourWayCardinal: {
         if ((direction == JoyControlStick::StickUp) || (direction == JoyControlStick::StickDown) ||
             (direction == JoyControlStick::StickLeft) || (direction == JoyControlStick::StickRight))
+        {
+            temphash.insert(direction, buttons.value(direction));
+        }
+
+        break;
+    }
+    case SixteenWayMode: {
+        if ((direction != JoyControlStick::StickCentered) && buttons.contains(direction))
         {
             temphash.insert(direction, buttons.value(direction));
         }

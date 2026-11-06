@@ -84,7 +84,7 @@ void JoyControlStickStatusBox::paintEvent(QPaintEvent *event)
     PadderCommon::inputDaemonMutex.lock();
 
     if (m_stick == nullptr || m_stick->getJoyMode() == JoyControlStick::StandardMode ||
-        m_stick->getJoyMode() == JoyControlStick::EightWayMode)
+        m_stick->getJoyMode() == JoyControlStick::EightWayMode || m_stick->getJoyMode() == JoyControlStick::SixteenWayMode)
     {
         drawEightWayBox();
     } else if (m_stick->getJoyMode() == JoyControlStick::FourWayCardinal)

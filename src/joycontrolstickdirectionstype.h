@@ -32,7 +32,18 @@ class JoyStickDirectionsType
         StickRightUp = 2,
         StickRightDown = 4,
         StickLeftUp = 8,
-        StickLeftDown = 6
+        StickLeftDown = 6,
+
+        // 8 direcoes extras, usadas so no modo "Sixteen Way" (16 direcoes).
+        // Ficam entre as 8 direcoes originais (22,5 graus de diferenca).
+        StickNNE = 9,  // entre Cima e Cima+Direita
+        StickENE = 10, // entre Cima+Direita e Direita
+        StickESE = 11, // entre Direita e Baixo+Direita
+        StickSSE = 12, // entre Baixo+Direita e Baixo
+        StickSSW = 13, // entre Baixo e Baixo+Esquerda
+        StickWSW = 14, // entre Baixo+Esquerda e Esquerda
+        StickWNW = 15, // entre Esquerda e Cima+Esquerda
+        StickNNW = 16  // entre Cima+Esquerda e Cima
     };
 };
 

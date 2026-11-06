@@ -80,6 +80,38 @@ QString JoyControlStickButton::getDirectionName() const
     case 8:
         label.append(tr("Up")).append("+").append(tr("Left"));
         break;
+
+    case 9:
+        label.append(tr("Up")).append("/").append(tr("Up")).append("+").append(tr("Right"));
+        break;
+
+    case 10:
+        label.append(tr("Right")).append("/").append(tr("Up")).append("+").append(tr("Right"));
+        break;
+
+    case 11:
+        label.append(tr("Right")).append("/").append(tr("Down")).append("+").append(tr("Right"));
+        break;
+
+    case 12:
+        label.append(tr("Down")).append("/").append(tr("Down")).append("+").append(tr("Right"));
+        break;
+
+    case 13:
+        label.append(tr("Down")).append("/").append(tr("Down")).append("+").append(tr("Left"));
+        break;
+
+    case 14:
+        label.append(tr("Left")).append("/").append(tr("Down")).append("+").append(tr("Left"));
+        break;
+
+    case 15:
+        label.append(tr("Left")).append("/").append(tr("Up")).append("+").append(tr("Left"));
+        break;
+
+    case 16:
+        label.append(tr("Up")).append("/").append(tr("Up")).append("+").append(tr("Left"));
+        break;
     }
 
     return label;
