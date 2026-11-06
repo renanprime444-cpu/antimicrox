@@ -1,0 +1,55 @@
+name: Build Windows (16 direcoes)
+
+on:
+    workflow_dispatch:
+
+jobs:
+    build-windows:
+        name: Compilar AntiMicroX para Windows (ZIP portatil)
+        runs-on: windows-2022
+        defaults:
+            run:
+                shell: msys2 {0}
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install Dependencies
+              uses: msys2/setup-msys2@v2
+              with:
+                  install: >-
+                      mingw-w64-x86_64-toolchain
+                      mingw-w64-x86_64-ninja
+                      mingw-w64-x86_64-openssl
+                      mingw-w64-x86_64-cmake
+                  msystem: mingw64
+                  release: false
+
+            - name: Install sdl2
+              run: |
+                curl -L -o mingw-w64-x86_64-SDL2-2.32.10-1-any.pkg.tar.zst https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-SDL2-2.32.10-1-any.pkg.tar.zst
+                pacman --noconfirm -U mingw-w64-x86_64-SDL2-2.32.10-1-any.pkg.tar.zst
+
+            - name: Install Qt
+              uses: jurplel/install-qt-action@v4
+              with:
+                  version: "6.10"
+                  host: "windows"
+                  target: "desktop"
+                  arch: "win64_mingw"
+                  dir: "${{ github.workspace }}/qt/"
+                  install-deps: "true"
+
+            - name: Configure CMake (portable)
+              run: cmake -DCMAKE_BUILD_TYPE=Release -DANTIMICROX_PKG_VERSION="Sixteen Way Custom" -DPORTABLE_WIN=ON -B '${{ github.workspace }}'/build
+              env:
+                  CMAKE_PREFIX_PATH: "${{ env.QT_ROOT_DIR }}/lib/cmake"
+
+            - name: Build ZIP Package
+              run: cmake --build '${{ github.workspace }}'/build --target package --parallel 8
+
+            - name: Upload ZIP
+              uses: actions/upload-artifact@v4
+              with:
+                  name: antimicrox-16-direcoes
+                  path: build/antimicrox*.zip
